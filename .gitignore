@@ -1,0 +1,53 @@
+# --- Python / Backend ---
+
+# Virtual Environment
+venv/
+**/venv/
+
+# Secret environment variables
+# THIS IS THE MOST IMPORTANT LINE TO PROTECT YOUR API KEY
+.env
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# User-generated media and reports
+# These can be large and contain private info
+recordings/
+transcripts/
+
+
+# --- Node / Frontend ---
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Production build folder
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local environment variables for frontend
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+
+# --- IDE / OS Specific ---
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# PyCharm
+.idea/

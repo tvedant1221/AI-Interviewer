@@ -1,0 +1,17 @@
+[
+  {
+    "id": "q1",
+    "text": "How do you freeze the top row in Excel?",
+    "keywords": ["freeze panes", "freeze top row", "view tab"]
+  },
+  {
+    "id": "q2",
+    "text": "Write a formula to total values in column B.",
+    "keywords": ["=sum(", "sum("]
+  },
+  {
+    "id": "q3",
+    "text": "How would you find the top-selling product per region?",
+    "keywords": ["pivot", "pivot table", "group by", "top product"]
+  }
+]
