@@ -1,4 +1,3 @@
-// App.js
 import React, { useEffect, useState, useRef } from "react";
 import {
   startSession,
@@ -121,7 +120,7 @@ function App() {
       const res = await sendAnswerAudio(sessionId, qId || "intro", blob);
 
       if (res.done) {
-        setQuestionText("✅ Thank you for completing the interview.");
+        setQuestionText("Thank you for completing the interview.");
         setAudioBlob(null); // Stop any playing audio
         await handleFinish();
         return;
@@ -145,7 +144,7 @@ function App() {
       }
     } catch (e) {
       console.error("Answer error", e);
-      setQuestionText("Sorry, an error occurred. Please refresh the page."); // User-friendly error
+      setQuestionText("Sorry, an error occurred. Please refresh the page."); 
     } finally {
       setIsProcessing(false); // Re-enable buttons
     }

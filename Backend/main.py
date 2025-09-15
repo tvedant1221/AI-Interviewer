@@ -1,8 +1,3 @@
-# main.py
-"""
-FastAPI backend: voice-only interview flow with chunked video upload + merging.
-"""
-
 import os
 import uvicorn
 
@@ -37,10 +32,7 @@ class StartReq(BaseModel):
 
 @app.post("/start_session")
 def start_session(payload: StartReq):
-    """
-    Create session and return only greeting.
-    Candidate must then record intro before follow-up is generated.
-    """
+
     session = interview_logic.create_session()
     sid = session["session_id"]
     interview_logic.set_candidate_intro(sid, payload.name, "")

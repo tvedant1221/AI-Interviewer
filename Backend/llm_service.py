@@ -1,14 +1,9 @@
-# llm_service.py
-"""
-LLM + Whisper + pyttsx3 helpers (streaming/no permanent audio files).
-"""
-
 import os
 import tempfile
 from typing import Optional, Dict, Any
 from pathlib import Path
 
-# Try to import the libraries
+
 try:
     import google.generativeai as genai
 except Exception:
@@ -21,7 +16,7 @@ except Exception:
 
 try:
     import pyttsx3
-    import pythoncom # Import the pythoncom library
+    import pythoncom 
 except Exception:
     pyttsx3 = None
     pythoncom = None
@@ -50,7 +45,7 @@ def _get_whisper_model():
         _whisper_model = WhisperModel("tiny", device="cpu", compute_type="int8")
     return _whisper_model
 
-# ---------- Gemini ----------
+
 def _call_gemini(prompt: str) -> Optional[str]:
     api_key = _get_api_key_from_file()
     if not genai or not api_key:
@@ -81,12 +76,12 @@ def generate_interviewer_text(prompt: str) -> str:
     print("⚠️ Using fallback text because Gemini returned an empty response.")
     return "Can you tell me more about how you use Excel in your work?"
 
-# ---------- TTS ----------
+
 def synthesize_tts_bytes(text: str) -> bytes:
     if pyttsx3 is None or pythoncom is None:
         return f"TTS not available. Text: {text[:500]}".encode("utf-8")
     
-    # This line is the fix for the "CoInitialize" error.
+    
     pythoncom.CoInitialize()
 
     fd, tmp_path = tempfile.mkstemp(suffix=".wav")
@@ -103,7 +98,7 @@ def synthesize_tts_bytes(text: str) -> bytes:
         except Exception:
             pass
 
-# ---------- STT (Whisper) ----------
+
 def transcribe_audio_bytes(audio_bytes: bytes, filename_hint: Optional[str] = None, language: str = "en") -> str:
     model = _get_whisper_model()
     if model is None:
@@ -130,8 +125,7 @@ def transcribe_audio_bytes(audio_bytes: bytes, filename_hint: Optional[str] = No
         except Exception:
             pass
 
-# (The rest of the high-level helper functions remain the same)
-# ...
+
 def make_greeting_text(candidate_name: str = "") -> str:
     prompt = ("You are a professional interviewer. Greet the candidate naturally "
               "and ask for their name and a brief description of their Excel experience. "

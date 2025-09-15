@@ -1,12 +1,3 @@
-# interview_logic.py
-"""
-Session management, scoring, chunked video storage & merging, transcript saving.
-
-- SESSIONS stores in-memory sessions (MVP).
-- video chunks stored temporarily under recordings/<session_id>/chunks...
-- merge_video_chunks(session_id) will use ffmpeg to concat them into one final file.
-"""
-
 import json
 import uuid
 import os
@@ -37,12 +28,12 @@ def create_session() -> Dict[str, Any]:
     session = {
         "session_id": sid,
         "candidate": {"name": "", "intro": ""},
-        "step": "INTRO",        # INTRO -> FOLLOWUP_DONE -> QUESTION -> SUMMARY
+        "step": "INTRO",        
         "question_index": -1,
-        "answers": [],         # each entry: q_id, q_text, transcript, score, evidence, answered_at
+        "answers": [],         
         "started_at": datetime.utcnow().isoformat(),
         "ended_at": None,
-        "video_chunks": [],    # list of chunk file paths
+        "video_chunks": [],    
         "final_video": None,
         "transcript_path": None,
         "final_score": None
@@ -60,9 +51,7 @@ def set_candidate_intro(session_id: str, name: str, intro_text: str) -> None:
     SESSIONS[session_id]["step"] = "INTRO"
 
 def store_intro_followup(session_id: str, transcript_text: str) -> None:
-    """
-    Store the free-form intro follow-up answer (non-scored) into session answers.
-    """
+    
     if session_id not in SESSIONS:
         raise KeyError("session not found")
     entry = {
@@ -77,7 +66,7 @@ def store_intro_followup(session_id: str, transcript_text: str) -> None:
     SESSIONS[session_id]["step"] = "FOLLOWUP_DONE"
 
 def pop_next_question(session_id: str) -> Optional[Dict[str, Any]]:
-    """Advance to the next question and return it, or None if done."""
+    
     if session_id not in SESSIONS:
         raise KeyError("session not found")
     session = SESSIONS[session_id]
@@ -129,10 +118,7 @@ def evaluate_answer(session_id: str, q_id: str, transcript_text: str) -> Dict[st
     return entry
 
 def save_video_chunk(session_id: str, filename: str, data: bytes) -> str:
-    """
-    Save a video chunk for the session under recordings/<session_id>/chunks.
-    Returns the saved chunk path.
-    """
+    
     if session_id not in SESSIONS:
         raise KeyError("session not found")
     session_folder = RECORDINGS_ROOT / session_id
@@ -147,10 +133,7 @@ def save_video_chunk(session_id: str, filename: str, data: bytes) -> str:
     return str(out_path)
 
 def merge_video_chunks(session_id: str) -> Optional[str]:
-    """
-    Merge saved chunks into one final <session_id>_final.webm using ffmpeg concat.
-    On success, removes chunk files and returns final file path; on failure returns None.
-    """
+    
     if session_id not in SESSIONS:
         raise KeyError("session not found")
     chunks: List[str] = SESSIONS[session_id].get("video_chunks", [])
@@ -161,11 +144,9 @@ def merge_video_chunks(session_id: str) -> Optional[str]:
     # ffmpeg requires list with "file '<path>'" entries
     with open(list_txt, "w", encoding="utf-8") as fh:
         for p in chunks:
-            # 1. Escape the single quotes first and store in a new variable.
-            escaped_path = p.replace("'", "'\\''")
-            
-            # 2. Use the new, clean variable in the f-string.
+            escaped_path = p.replace("'", "'\\''")           
             fh.write(f"file '{escaped_path}'\n")
+
     final_path = RECORDINGS_ROOT / f"{session_id}_final.webm"
     # run ffmpeg
     cmd = [
@@ -175,8 +156,6 @@ def merge_video_chunks(session_id: str) -> Optional[str]:
     try:
         subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except Exception as e:
-        # merging failed
-        # optionally keep chunks for debugging
         return None
     # cleanup chunks and list file
     for p in chunks:
@@ -194,9 +173,7 @@ def merge_video_chunks(session_id: str) -> Optional[str]:
     return str(final_path)
 
 def finalize_and_save_transcript(session_id: str, private_report_text: str) -> str:
-    """
-    Compose transcript and private report and save to TRANSCRIPTS_DIR/<session_id>.txt
-    """
+
     if session_id not in SESSIONS:
         raise KeyError("session not found")
     session = SESSIONS[session_id]

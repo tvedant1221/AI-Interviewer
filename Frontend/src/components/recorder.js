@@ -1,8 +1,6 @@
 import React, { useState, useRef } from "react";
 
-/**
- * Recorder component records one answer from user and calls onStop(blob)
- */
+
 const Recorder = ({ onStop, disabled }) => {
   const [recording, setRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
@@ -13,7 +11,7 @@ const Recorder = ({ onStop, disabled }) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Explicit mimeType for compatibility
+      
       const options = { mimeType: "audio/webm;codecs=opus" };
       const mediaRecorder = new MediaRecorder(stream, options);
 
@@ -28,6 +26,7 @@ const Recorder = ({ onStop, disabled }) => {
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunks.current, { type: "audio/webm" });
         onStop(blob);
+        
         // Stop mic stream tracks
         stream.getTracks().forEach((t) => t.stop());
       };

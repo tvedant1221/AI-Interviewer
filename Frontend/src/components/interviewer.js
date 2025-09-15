@@ -1,4 +1,3 @@
-// interviewer.js
 import React, { useEffect, useRef, useState } from "react";
 
 const Interviewer = ({ text, audioBlob }) => {

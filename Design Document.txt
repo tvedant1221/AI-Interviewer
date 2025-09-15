@@ -1,0 +1,118 @@
+========================================
+Design Document & Approach Strategy
+Project: AI Excel Interviewer
+Version: 1.0
+Date: 2025-09-15
+========================================
+
+1. Introduction
+----------------
+
+1.1. Project Goal
+The primary goal of this project is to create a realistic, AI-powered mock interview simulator for candidates preparing for jobs that require proficiency in Microsoft Excel. The application provides an interactive, voice-driven experience to help users practice their responses to common technical and situational questions.
+
+1.2. Problem Statement
+Job candidates often lack opportunities to practice technical interview questions in a realistic, conversational setting. Standard lists of questions do not simulate the pressure and dynamic nature of a real interview. This project provides a tool for candidates to rehearse their answers, receive automated feedback, and review their performance via video recording.
+
+1.3. Target Audience
+The primary audience is job seekers applying for roles such as data analyst, financial analyst, business analyst, and administrative positions where Excel skills are a key requirement. A secondary audience could be hiring managers or recruiters looking for a preliminary screening tool.
+
+
+2. System Architecture
+---------------------
+
+2.1. Overview
+The application is a full-stack web application with a client-server architecture. It consists of a React.js frontend, a Python FastAPI backend, and integrations with several AI and media processing services.
+
+[Image of a simple web architecture diagram]
+
+2.2. Frontend (Client-side)
+* **Technology**: React.js, Axios
+* **Responsibilities**:
+    * Render the user interface for the interview.
+    * Capture candidate audio for answers using the `MediaRecorder` API.
+    * Capture candidate video in timed chunks throughout the session.
+    * Communicate with the backend via a RESTful API to send audio/video data and receive questions.
+    * Handle UI state changes (e.g., awaiting answer, processing, finished).
+
+2.3. Backend (Server-side)
+* **Technology**: Python 3.11, FastAPI, Uvicorn
+* **Responsibilities**:
+    * Provide API endpoints for session management, audio processing, and video uploads.
+    * Manage the state of each interview session.
+    * Integrate with AI services (Gemini, faster-whisper, pyttsx3) to drive the interview logic.
+    * Handle file system operations for storing video chunks and final transcripts.
+    * Execute external processes, specifically `ffmpeg`, for video merging.
+
+2.4. AI & External Services
+* **LLM (Google Gemini API)**: Used to generate natural greetings, dynamic follow-up questions based on candidate introductions, and a final summary feedback report.
+* **STT (faster-whisper)**: A high-performance, local speech-to-text model used to transcribe the candidate's spoken audio answers into text. This was chosen over other Whisper implementations for its efficient performance and simpler installation.
+* **TTS (pyttsx3)**: A local text-to-speech engine used to give the AI interviewer a voice, reading out questions to the candidate.
+
+2.5. Data Storage
+* **Session Data**: For this Minimum Viable Product (MVP), all session data (candidate info, answers, scores) is stored in a simple in-memory Python dictionary on the backend. **Limitation**: This is not persistent and will not scale beyond a single server process.
+* **Media Storage**: All media is stored on the local filesystem of the server.
+    * `./recordings/<session_id>/`: Temporary directory for storing video chunks during the interview.
+    * `./recordings/`: Location for final merged `.webm` video files.
+    * `./transcripts/`: Location for final `.txt` transcript and feedback reports.
+
+
+3. Core Features & User Flow
+-----------------------------
+
+A typical interview session follows these steps:
+1.  **Session Initiation**: The user starts the application. The frontend makes a POST request to `/start_session`. The backend creates a new session ID, calls Gemini to generate a greeting, and returns the session ID and greeting text.
+2.  **Introduction**: The AI interviewer speaks the greeting. The candidate records their audio introduction. The frontend sends this audio to the `/answer_audio` endpoint.
+3.  **Dynamic Follow-up**: The backend transcribes the introduction, sends the transcript to Gemini to generate a relevant follow-up question, and returns this question to the frontend.
+4.  **Question Loop**: The application iterates through a predefined list of technical Excel questions from `questions.json`. For each question:
+    * The backend sends the question text to Gemini to be rephrased into a more natural, conversational style.
+    * The AI speaks the rephrased question.
+    * The candidate records their answer.
+    * The backend transcribes the answer and evaluates it based on a simple keyword-matching algorithm.
+5.  **Session Finalization**: After the last question, the frontend calls `/end_session`. The backend:
+    * Triggers the `ffmpeg` process to merge all video chunks into a single file.
+    * Compiles all transcribed answers and scores.
+    * Calls Gemini to generate a summary feedback report.
+    * Saves the complete transcript and report to a text file.
+
+
+4. Key Technical Decisions & Approach Strategy
+-------------------------------------------
+
+4.1. Session Management (MVP Approach)
+The choice to use an in-memory dictionary for session management was a strategic decision to simplify the initial development (MVP). The approach was to first prove the core AI and media functionality before introducing external dependencies like a database or cache. This strategy has the known trade-off of lacking persistence and scalability.
+
+4.2. Media Handling (Chunked Uploads)
+Instead of a single large video upload at the end of the session, a chunked approach was implemented. The frontend records video in 5-second intervals and uploads each chunk as it's created.
+* **Rationale**: This approach is more resilient to network interruptions and avoids browser limitations on the size of in-memory blobs for very long interviews. The server-side merging via `ffmpeg` is a reliable way to reconstruct the full video post-session.
+
+4.3. Dependency Management & Environment
+A significant part of the development strategy involved overcoming environment-specific installation challenges.
+* **Python Version**: Standardizing on Python 3.11 was a key decision to ensure the availability of pre-compiled wheels for complex dependencies like `av`, avoiding difficult build-from-source issues on Windows.
+* **System Dependencies**: The project requires system-level tools (`ffmpeg`, C++ Build Tools). The setup instructions in the `README.md` were made explicit to ensure reproducibility.
+* **Whisper Implementation**: The project was migrated from `openai-whisper` to `faster-whisper` to resolve persistent build errors and gain performance benefits.
+
+4.4. API Key Management
+To avoid security risks, the `GOOGLE_API_KEY` is managed via a `.env` file, which is explicitly listed in `.gitignore`. A custom file-reading function was implemented in the backend to ensure the key was loaded reliably, bypassing issues observed with standard environment variable loading in Uvicorn's reloader process.
+
+
+5. Future Improvements & Scalability
+------------------------------------
+To evolve the project from its current MVP state into a robust, production-ready application, the following areas should be addressed:
+
+5.1. Core Architecture Enhancements
+* **Persistent Sessions**: Replace the in-memory session dictionary with an external data store like **Redis** for fast, scalable session caching. This is the highest priority for supporting multiple users and server instances.
+* **Background Worker Queue**: Offload long-running, blocking tasks (video merging with `ffmpeg`, and final report generation with Gemini) to a dedicated background worker system like **Celery** or **ARQ**. This will make the `/end_session` endpoint respond instantly, improving user experience.
+* **Cloud-based TTS**: Replace the local `pyttsx3` engine with a cloud-based, streaming Text-to-Speech service (e.g., Google Cloud TTS, ElevenLabs). This would provide higher-quality, lower-latency audio and reduce the load on the backend server.
+* **Cloud Media Storage**: Migrate from storing recordings and transcripts on the local filesystem to a cloud storage solution like **Amazon S3** or **Google Cloud Storage**. This is essential for scalability and data persistence.
+
+5.2. Feature Enhancements
+* **User Authentication & Dashboard**: Implement a user account system to allow candidates to log in, track their interview history, and review past feedback and recordings in a personal dashboard.
+* **Advanced Scoring Model**: Move beyond the current keyword-based scoring. Implement a more sophisticated evaluation by making a Gemini API call to perform a semantic analysis of the candidate's answer against an ideal answer rubric.
+* **Expanded Question Banks**: Create a system to easily swap between different sets of questions (e.g., "Excel - Advanced," "SQL Basics," "Power BI Fundamentals") to broaden the application's utility.
+* **Behavioral Questions**: Incorporate a module for AI-generated behavioral questions ("Tell me about a time when...") to provide a more comprehensive interview experience.
+
+5.3. Deployment and Operations
+* **Containerization**: Dockerize the frontend and backend applications using `Dockerfile` and `docker-compose`. This will ensure a consistent and reproducible environment for both development and production.
+* **Cloud Deployment**: Deploy the containerized application to a scalable cloud platform like **Google Cloud Run**, **AWS Elastic Beanstalk**, or **Microsoft Azure App Service**.
+* **CI/CD Pipeline**: Implement a Continuous Integration/Continuous Deployment pipeline using tools like **GitHub Actions** to automate testing and deployment.

@@ -1,11 +1,10 @@
-// api.js
 import axios from "axios";
 
 const API = axios.create({
   baseURL: "http://127.0.0.1:8000",
 });
 
-// Start new session (only candidate name now)
+// Start new session
 export const startSession = async (name) => {
   const res = await API.post("/start_session", { name });
   return res.data;
